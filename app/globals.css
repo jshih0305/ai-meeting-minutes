@@ -1,26 +1,171 @@
 @import "tailwindcss";
 
+/* ---------- 設計 token：紙與墨 ---------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --paper: #f6f3ec; /* 頁面底色：暖白紙 */
+  --paper-2: #efe9dd; /* 次要底色 */
+  --card: #fffdf8; /* 卡片 */
+  --ink: #1b1814; /* 主要文字：墨 */
+  --ink-2: #5a534a; /* 次要文字 */
+  --ink-3: #8f877b; /* 輔助文字 */
+  --line: #e2dbcd; /* 分隔線 */
+  --line-2: #cfc6b5;
+  --night: #1b1814; /* 固定深色區塊：淺色、深色模式都一樣 */
+  --night-ink: #f6f3ec;
+  --accent: #e2531d; /* 朱橘 */
+  --accent-hover: #c94512;
+  --accent-soft: #fbe4d8;
+  --accent-ink: #ffffff;
+  --marker: #f6d860; /* 螢光筆 */
+  --ok: #3f7a5a;
+  --ok-soft: #dcebe1;
+  --danger: #b4322a;
+  --danger-soft: #f8dfdb;
+  --warn: #8a5a0b;
+  --warn-soft: #f7ead0;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* 講者標籤 */
+  --sp0-bg: #fbe4d8; --sp0-fg: #9a3412;
+  --sp1-bg: #dcebe1; --sp1-fg: #2f5d45;
+  --sp2-bg: #e1e5f4; --sp2-fg: #34437a;
+  --sp3-bg: #f5e8c8; --sp3-fg: #7a5410;
+  --sp4-bg: #efdcea; --sp4-fg: #74345f;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --paper: #12110f;
+    --paper-2: #1a1815;
+    --card: #1d1b18;
+    --ink: #f2ede4;
+    --ink-2: #b6aea0;
+    --ink-3: #7f786d;
+    --line: #2e2b26;
+    --line-2: #403b34;
+    --night: #1f1c18;
+    --accent: #ff6a33;
+    --accent-hover: #ff8455;
+    --accent-soft: #3b2218;
+    --accent-ink: #1b1814;
+    --marker: #8c6f14;
+    --ok: #7cc49b;
+    --ok-soft: #1c3127;
+    --danger: #f08a80;
+    --danger-soft: #3a1d1a;
+    --warn: #e8c070;
+    --warn-soft: #33290f;
+
+    --sp0-bg: #3b2218; --sp0-fg: #ffb08f;
+    --sp1-bg: #1c3127; --sp1-fg: #9fd6b5;
+    --sp2-bg: #1f2540; --sp2-fg: #aab7ec;
+    --sp3-bg: #33290f; --sp3-fg: #ecc979;
+    --sp4-bg: #331d2e; --sp4-fg: #e3a9d2;
   }
 }
 
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-night: var(--night);
+  --color-night-ink: var(--night-ink);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-marker: var(--marker);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+
+  --font-sans: var(--font-geist-sans), var(--font-noto-sans-tc), "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --font-serif: var(--font-noto-serif-tc), "Songti TC", "PMingLiU", serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  background: var(--paper);
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "palt" 0;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--marker);
+  color: var(--ink);
+}
+
+/* 螢光筆底線：標題重點字 */
+.marker {
+  background: linear-gradient(transparent 62%, var(--marker) 62%, var(--marker) 92%, transparent 92%);
+  padding: 0 0.08em;
+}
+
+/* 紙張質感：極淡的點陣 */
+.paper-dots {
+  background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* 講者標籤配色 */
+.speaker-0 { background: var(--sp0-bg); color: var(--sp0-fg); }
+.speaker-1 { background: var(--sp1-bg); color: var(--sp1-fg); }
+.speaker-2 { background: var(--sp2-bg); color: var(--sp2-fg); }
+.speaker-3 { background: var(--sp3-bg); color: var(--sp3-fg); }
+.speaker-4 { background: var(--sp4-bg); color: var(--sp4-fg); }
+
+/* 音訊播放器配合主題 */
+audio {
+  color-scheme: light dark;
+  accent-color: var(--accent);
+}
+
+/* 處理中的來回進度條 */
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+.animate-indeterminate {
+  animation: indeterminate 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* 聲波跳動 */
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+.animate-wave {
+  animation: wave 1.1s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* 首頁元素淡入 */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-rise {
+  animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-indeterminate,
+  .animate-wave,
+  .animate-rise {
+    animation: none;
+  }
 }
