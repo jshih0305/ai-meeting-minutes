@@ -2,11 +2,8 @@ import OpenAI from "openai";
 import { Converter } from "opencc-js";
 import type { TranscriptionDiarized } from "openai/resources/audio/transcriptions";
 
-/** OpenAI 語音轉文字單檔上限 25MB */
-export const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
-
-/** OpenAI 支援的音檔副檔名 */
-export const AUDIO_EXTENSIONS = ["mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm", "ogg", "flac"];
+// 上限與格式定義在 lib/audio.ts（瀏覽器也要用），這裡轉出去給舊的 import 用
+export { AUDIO_EXTENSIONS, MAX_AUDIO_BYTES } from "@/lib/audio";
 
 // 有講者辨識（誰說的）和時間軸，最適合會議紀錄；可用環境變數換模型
 const MODEL = process.env.OPENAI_TRANSCRIBE_MODEL ?? "gpt-4o-transcribe-diarize";

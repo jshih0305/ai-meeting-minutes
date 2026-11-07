@@ -1,12 +1,14 @@
-import { del, get, put } from "@vercel/blob";
+import { BlobNotFoundError, del, get, head, put } from "@vercel/blob";
+import { audioContentType, audioPathname, MAX_AUDIO_BYTES, userAudioPrefix } from "@/lib/audio";
 
 /**
  * 目前的 Blob store 是 public（建立時決定、不能改）。public 檔案只要拿到網址就能下載，
- * 所以網址只存在資料庫、絕不傳給前端，播放一律經過 /api/meetings/[id]/audio 檢查擁有者。
- * 之後在 Vercel 建一個 private store、換掉 BLOB_READ_WRITE_TOKEN，並設 BLOB_ACCESS=private 即可。
+ * 所以網址只存在資料庫、播放一律經過 /api/meetings/[id]/audio 檢查擁有者。
+ * 之後在 Vercel 建一個 private store、換掉 BLOB_READ_WRITE_TOKEN，並設 NEXT_PUBLIC_BLOB_ACCESS=private
+ * （瀏覽器直傳也要知道，所以用 NEXT_PUBLIC_ 開頭；伺服器兩個名稱都認）。
  */
 export const BLOB_ACCESS: "public" | "private" =
-  process.env.BLOB_ACCESS === "private" ? "private" : "public";
+  (process.env.BLOB_ACCESS ?? process.env.NEXT_PUBLIC_BLOB_ACCESS) === "private" ? "private" : "public";
 
 export type StoredAudio = {
   url: string;
@@ -16,14 +18,12 @@ export type StoredAudio = {
   access: "public" | "private";
 };
 
-/** 存錄音檔，路徑依使用者分資料夾：meetings/<userId>/<時間>-<檔名>（加隨機字尾，網址猜不到） */
+/** 伺服器端上傳（舊的 multipart 流程用，檔案會受 Vercel 4.5MB 請求限制） */
 export async function uploadAudio(userId: string, file: File): Promise<StoredAudio> {
-  const safeName = file.name.replace(/[^\w.\-一-鿿]+/g, "_").slice(-80) || "audio";
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const blob = await put(`meetings/${userId}/${stamp}-${safeName}`, file, {
+  const blob = await put(audioPathname(userId, file.name), file, {
     access: BLOB_ACCESS,
     addRandomSuffix: true,
-    contentType: audioContentType(file),
+    contentType: audioContentType(file.name, file.type),
   });
   return {
     url: blob.url,
@@ -34,22 +34,48 @@ export async function uploadAudio(userId: string, file: File): Promise<StoredAud
   };
 }
 
-const AUDIO_TYPES: Record<string, string> = {
-  mp3: "audio/mpeg",
-  mpeg: "audio/mpeg",
-  mpga: "audio/mpeg",
-  m4a: "audio/mp4",
-  mp4: "audio/mp4",
-  wav: "audio/wav",
-  webm: "audio/webm",
-  ogg: "audio/ogg",
-  flac: "audio/flac",
-};
+export class UploadedAudioError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+  }
+}
 
-/** 瀏覽器有時給空字串或 application/octet-stream，播放器會認不出來，改依副檔名判斷 */
-function audioContentType(file: File): string | undefined {
-  if (file.type.startsWith("audio/") || file.type.startsWith("video/")) return file.type;
-  return AUDIO_TYPES[file.name.split(".").pop()?.toLowerCase() ?? ""] ?? (file.type || undefined);
+/**
+ * 讀回瀏覽器直傳到 Blob 的錄音檔，交給 OpenAI 用。
+ * 只收 pathname（不收前端給的網址），而且必須在這個使用者自己的資料夾裡。
+ */
+export async function readUploadedAudio(
+  userId: string,
+  pathname: string,
+  fileName: string,
+): Promise<{ file: File; audio: StoredAudio }> {
+  if (!pathname.startsWith(userAudioPrefix(userId)) || pathname.includes("..")) {
+    throw new UploadedAudioError("找不到這個錄音檔", 404);
+  }
+
+  let meta;
+  try {
+    meta = await head(pathname);
+  } catch (e) {
+    if (e instanceof BlobNotFoundError) throw new UploadedAudioError("找不到這個錄音檔，請重新上傳", 404);
+    throw e;
+  }
+  if (meta.size > MAX_AUDIO_BYTES) {
+    throw new UploadedAudioError(`音檔超過 ${MAX_AUDIO_BYTES / 1024 / 1024}MB 上限`, 413);
+  }
+
+  const blob = await get(meta.url, { access: BLOB_ACCESS, useCache: false });
+  if (!blob?.stream) throw new UploadedAudioError("找不到這個錄音檔，請重新上傳", 404);
+  const bytes = await new Response(blob.stream).arrayBuffer();
+
+  const contentType = audioContentType(fileName, meta.contentType) ?? meta.contentType;
+  return {
+    file: new File([bytes], fileName, { type: contentType }),
+    audio: { url: meta.url, pathname: meta.pathname, contentType, size: meta.size, access: BLOB_ACCESS },
+  };
 }
 
 export async function deleteAudio(url: string) {

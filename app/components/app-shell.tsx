@@ -8,7 +8,7 @@ import { Logo, LogoMark } from "@/app/components/brand";
 import MeetingView, { formatDateTime, formatTime } from "@/app/components/meeting-view";
 import type { MeetingListItem } from "@/lib/meetings";
 
-type User = { email: string; name: string };
+type User = { id: string; email: string; name: string };
 
 /** 主畫面：上方使用者列；左邊歷史紀錄，右邊是新增或查看中的會議 */
 export default function AppShell() {
@@ -264,7 +264,7 @@ export default function AppShell() {
             {selected ? (
               <MeetingView key={selected.id ?? selected.createdAt} meeting={selected} />
             ) : (
-              <AudioUpload onDone={onUploaded} onUnauthorized={goLogin} />
+              <AudioUpload onDone={onUploaded} onUnauthorized={goLogin} userId={user.id} />
             )}
           </div>
         </main>
